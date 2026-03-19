@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultAcceptHeader = "application/json"
-	defaultUserAgent    = "tesla-charger-status/1.0"
+	defaultUserAgent    = "tesla-charger-service/1.0"
 	retryCount          = 3
 	retryWaitTime       = 100 * time.Millisecond
 	retryMaxWaitTime    = 300 * time.Millisecond

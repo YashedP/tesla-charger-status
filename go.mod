@@ -1,4 +1,4 @@
-module tesla-charger-status
+module tesla-charger-service
 
 go 1.24.0
 

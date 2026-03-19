@@ -11,12 +11,12 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 
-	"tesla-charger-status/httpapi"
-	"tesla-charger-status/internal/config"
-	"tesla-charger-status/internal/crypto"
-	"tesla-charger-status/internal/paths"
-	"tesla-charger-status/internal/store"
-	"tesla-charger-status/internal/tesla"
+	"tesla-charger-service/httpapi"
+	"tesla-charger-service/internal/config"
+	"tesla-charger-service/internal/crypto"
+	"tesla-charger-service/internal/paths"
+	"tesla-charger-service/internal/store"
+	"tesla-charger-service/internal/tesla"
 )
 
 const privateDirPerm os.FileMode = 0o700

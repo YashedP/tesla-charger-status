@@ -19,11 +19,11 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 	"golang.org/x/oauth2"
 
-	"tesla-charger-status/internal/config"
-	"tesla-charger-status/internal/paths"
-	"tesla-charger-status/internal/store"
+	"tesla-charger-service/internal/config"
+	"tesla-charger-service/internal/paths"
+	"tesla-charger-service/internal/store"
 
-	_ "tesla-charger-status/docs"
+	_ "tesla-charger-service/docs"
 )
 
 const (

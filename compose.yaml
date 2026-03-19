@@ -1,5 +1,5 @@
 services:
-  tesla-charger-status:
+  tesla-charger-service:
     build:
       context: .
       dockerfile: Dockerfile
