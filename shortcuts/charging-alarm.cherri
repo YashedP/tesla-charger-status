@@ -1,0 +1,25 @@
+#define name "Tesla Charging Check"
+#define color red
+#define glyph lightningBolt
+
+#include 'actions/web'
+#include 'actions/scripting'
+#include 'actions/calendar'
+
+// Config — replace BEARER_TOKEN_HERE with your actual token before compiling
+@url = "https://fleet.yashjani.com/v1/is-charging"
+
+// Hit the API (headers param requires inline dictionary literal)
+const response = downloadURL(@url, {"Authorization": "Bearer BEARER_TOKEN_HERE"})
+
+// Parse JSON response
+const charging = getValue(response, "is_charging")
+
+if charging == false {
+  // Set alarm for ~1 min from now so it fires persistently
+  const now = currentDate()
+  const alarmTime = adjustDate(now, "Add", qty(1, "min"))
+  const formatted = formatDate(alarmTime, "Custom", "HH:mm")
+
+  createAlarm("Tesla Not Charging", formatted)
+}

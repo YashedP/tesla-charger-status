@@ -38,6 +38,9 @@ data/*
 secrets/*
 !secrets/.gitkeep
 
+# Compiled Apple Shortcuts
+*.shortcut
+
 # Agent artifacts
 .agent/
 

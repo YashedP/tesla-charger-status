@@ -3,7 +3,7 @@ GO ?= go
 SWAG ?= swag
 KEY_PATH ?= ./secrets/token_enc_key.b64
 
-.PHONY: help key-generate key-generate-force key-validate key-scripts run docs lint fleet-keygen fleet-register
+.PHONY: help key-generate key-generate-force key-validate key-scripts run docs lint fleet-keygen fleet-register shortcut
 
 help:
 	@echo "Available targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  make lint                # Run golangci-lint"
 	@echo "  make fleet-keygen        # Generate EC key pair for Fleet API partner registration"
 	@echo "  make fleet-register      # Register as Tesla Fleet API partner"
+	@echo "  make shortcut            # Compile Apple Shortcut from Cherri source"
 
 key-generate:
 	$(PYTHON) scripts/gen_token_key.py --path $(KEY_PATH)
@@ -49,3 +50,7 @@ ifndef DOMAIN
 	$(error DOMAIN is required. Usage: make fleet-register DOMAIN=your-domain.com)
 endif
 	$(PYTHON) scripts/register_partner.py --domain $(DOMAIN)
+
+shortcut: ## Compile Apple Shortcut from Cherri source
+	cherri shortcuts/charging-alarm.cherri
+	@echo "Built: shortcuts/Tesla Charging Check.shortcut"
