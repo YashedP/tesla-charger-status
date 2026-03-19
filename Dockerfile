@@ -8,7 +8,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/tesla-charger-status ./cmd/server
 
 FROM alpine:3.20
-RUN adduser -D -H -u 10001 app
+RUN adduser -D -u 10001 app
 WORKDIR /app
 
 COPY --from=builder /out/tesla-charger-status /app/tesla-charger-status
