@@ -1,0 +1,13 @@
+services:
+  tesla-charger-status:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./secrets:/app/secrets
+    restart: unless-stopped

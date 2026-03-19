@@ -26,6 +26,17 @@ go.work.sum
 
 # env file
 .env
+.python-version
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
+
+# local runtime artifacts
+data/*
+!data/.gitkeep
+secrets/*
+!secrets/.gitkeep
 
 # Editor/IDE
 # .idea/

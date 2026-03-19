@@ -1,0 +1,27 @@
+PYTHON ?= python3
+GO ?= go
+KEY_PATH ?= ./secrets/token_enc_key.b64
+
+.PHONY: help key-generate key-generate-force key-validate key-scripts run
+
+help:
+	@echo "Available targets:"
+	@echo "  make key-scripts         # Generate key (if missing) and validate it"
+	@echo "  make key-generate        # Generate key file at $(KEY_PATH)"
+	@echo "  make key-generate-force  # Regenerate key file at $(KEY_PATH)"
+	@echo "  make key-validate        # Validate key file at $(KEY_PATH)"
+	@echo "  make run                 # Start Go backend server"
+
+key-generate:
+	$(PYTHON) scripts/gen_token_key.py --path $(KEY_PATH)
+
+key-generate-force:
+	$(PYTHON) scripts/gen_token_key.py --path $(KEY_PATH) --force
+
+key-validate:
+	$(PYTHON) scripts/validate_token_key.py --path $(KEY_PATH)
+
+key-scripts: key-generate key-validate
+
+run:
+	$(GO) run ./cmd/server
