@@ -59,8 +59,8 @@ def _post_json(url: str, data: dict, headers: dict | None = None) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--domain", default="fleet.yashjani.com",
-                        help="Domain hosting the public key (default: fleet.yashjani.com)")
+    parser.add_argument("--domain", required=True,
+                        help="Domain hosting the public key")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print requests without executing them")
     args = parser.parse_args()

@@ -45,4 +45,7 @@ fleet-keygen:
 	chmod 644 ./secrets/fleet_ec_public.pem
 
 fleet-register:
-	$(PYTHON) scripts/register_partner.py
+ifndef DOMAIN
+	$(error DOMAIN is required. Usage: make fleet-register DOMAIN=your-domain.com)
+endif
+	$(PYTHON) scripts/register_partner.py --domain $(DOMAIN)

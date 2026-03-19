@@ -1,231 +1,116 @@
-# Tesla Charger Status Wrapper (Go)
+# Tesla Charger Status
 
-Personal-use Go service that wraps Tesla Fleet API and exposes one Shortcut-friendly endpoint.
+Personal Go service that wraps the Tesla Fleet API into one simple endpoint: "is my car charging?"
 
-- `GET /v1/is-charging` returns plain text `true` or `false`
-- `GET /.well-known/appspecific/com.tesla.3p.public-key.pem` serves the Fleet API EC public key (unauthenticated — Tesla fetches this during partner registration)
-- OAuth bootstrap endpoints:
-  - `GET /oauth/start`
-  - `GET /oauth/callback`
+Built for iPhone Shortcuts — schedule a nightly check at 11 PM, get back `true` or `false`.
 
-## What this project does
+## Setup
 
-This service lets you call one URL (for example from iPhone Shortcuts at 11:00 PM daily) and receive:
+You'll need:
 
-- `true` if the car is actively charging
-- `false` for not charging, disconnected, unavailable, or upstream errors
-
-## Architecture and behavior
-
-- Router: `chi`
-- OAuth flow: Tesla Authorization Code + refresh token
-- Token storage: encrypted values in SQLite
-- Database path (fixed): `./data/tesla.sqlite`
-- Encryption key file (fixed): `./secrets/token_enc_key.b64`
-- Fleet API EC key pair: `./secrets/fleet_ec_private.pem`, `./secrets/fleet_ec_public.pem`
-- Wrapper endpoint auth: static bearer token (`SHORTCUT_BEARER_TOKEN`)
-
-If `./data/tesla.sqlite` does not exist, it is created automatically on startup.
-
-## Prerequisites
-
-1. Tesla Fleet API app credentials already created in Tesla Developer portal:
-- `TESLA_CLIENT_ID`
-- `TESLA_CLIENT_SECRET`
-- allowed callback URL derived as `<APP_BASE_URL>/oauth/callback` (must match exactly)
-
-2. Your vehicle VIN
-
-3. Runtime tools:
-- Option A: Go 1.22+ and Python 3.9+
-- Option B: Docker + Docker Compose
-
-## Required environment variables
-
-Set these in `.env` (or environment):
-
-- `TESLA_CLIENT_ID`
-- `TESLA_CLIENT_SECRET`
-- `APP_BASE_URL` (example: `http://localhost:5000` or `https://your-domain`)
-- `TESLA_VIN`
-- `SHORTCUT_BEARER_TOKEN`
-- `TESLA_BASE_URL`
-
-Optional:
-
-- `PORT` (default `5000`)
-- `TESLA_SCOPES` (default `offline_access vehicle_device_data`)
-
-## Regional Tesla base URL
-
-Use the Fleet API base URL for your account region in `TESLA_BASE_URL`.
-
-Common value (North America):
-
-- `https://fleet-api.prd.na.vn.cloud.tesla.com`
-
-## Quick start (local Go)
-
-1. Clone and enter repo:
+- Tesla Fleet API credentials (`TESLA_CLIENT_ID`, `TESLA_CLIENT_SECRET`) from the [Tesla Developer Portal](https://developer.tesla.com/)
+- Your vehicle VIN
+- Go 1.22+ / Python 3.9+, or Docker
 
 ```bash
-git clone <YOUR_FORK_OR_REPO_URL>
-cd tesla-charger-status
-```
+# generate encryption key
+make key-scripts
 
-2. Generate encryption key file:
-
-```bash
-python3 scripts/gen_token_key.py
-python3 scripts/validate_token_key.py
-```
-
-3. Create env file:
-
-```bash
+# configure
 cp .env.example .env
+# fill in your values
+
+# run
+go run ./cmd/server        # or: docker compose up --build
 ```
 
-4. Edit `.env` and set all required variables.
+Server starts on `http://localhost:5000`.
 
-5. Start server:
+## Environment variables
+
+Set in `.env`:
+
+
+| Variable                | Required | Note                                                            |
+| ----------------------- | -------- | --------------------------------------------------------------- |
+| `TESLA_CLIENT_ID`       | yes      |                                                                 |
+| `TESLA_CLIENT_SECRET`   | yes      |                                                                 |
+| `APP_BASE_URL`          | yes      | e.g. `https://your-domain.com`                                  |
+| `TESLA_VIN`             | yes      |                                                                 |
+| `SHORTCUT_BEARER_TOKEN` | yes      | long random string you make up                                  |
+| `TESLA_BASE_URL`        | yes      | `https://fleet-api.prd.na.vn.cloud.tesla.com` for North America |
+| `PORT`                  | no       | default `5000`                                                  |
+
+
+## One-time setup
+
+### 1. Fleet API partner registration
+
+Tesla needs to verify your app before it'll respond to API calls. This is a one-time handshake.
 
 ```bash
-go run ./cmd/server
+make fleet-keygen     # generate EC key pair
+# deploy so Tesla can reach /.well-known/appspecific/com.tesla.3p.public-key.pem
+make fleet-register DOMAIN=your-domain.com
 ```
 
-Server default address: `http://localhost:5000`
-The app automatically loads `.env` for native runs.
+### 2. OAuth
 
-## Fleet API partner registration (one-time)
+Open `http://<your_url>/oauth/start`, sign in with Tesla, authorize. Tokens are stored encrypted in SQLite.
 
-Tesla Fleet API requires your app to be registered as a partner in your region. This is a one-time setup.
-
-1. Generate the EC key pair:
+## Usage
 
 ```bash
-make fleet-keygen
+curl -H "Authorization: Bearer <SHORTCUT_BEARER_TOKEN>" http://localhost:5000/v1/is-charging
+# {"is_charging": true}
 ```
 
-This creates `./secrets/fleet_ec_private.pem` and `./secrets/fleet_ec_public.pem`.
+### iPhone Shortcuts
 
-2. Deploy the app so that `https://<your-domain>/.well-known/appspecific/com.tesla.3p.public-key.pem` is publicly reachable. Tesla fetches this endpoint unauthenticated during registration.
+1. Create a daily automation (e.g. 11 PM)
+2. Action: **Get Contents of URL**
+  - URL: `https://your-domain/v1/is-charging`
+  - Header: `Authorization: Bearer <your-token>`
+3. Branch on `true` / `false`
 
-3. Register your domain with Tesla:
+## Endpoints
 
-```bash
-# Preview what will be sent
-python3 scripts/register_partner.py --dry-run
 
-# Execute registration (requires TESLA_CLIENT_ID and TESLA_CLIENT_SECRET in .env)
-make fleet-register
+| Route                                                      | Auth         | Purpose                                   |
+| ---------------------------------------------------------- | ------------ | ----------------------------------------- |
+| `GET /v1/is-charging`                                      | Bearer token | Charging status                           |
+| `GET /.well-known/appspecific/com.tesla.3p.public-key.pem` | none         | Fleet API public key (Tesla fetches this) |
+| `GET /oauth/start`                                         | none         | Start OAuth flow                          |
+| `GET /oauth/callback`                                      | none         | OAuth callback                            |
+| `GET /docs/`                                               | none         | Swagger UI                                |
+
+
+## Project structure
+
+```
+cmd/server/       entrypoint
+httpapi/          routes + handlers
+internal/tesla/   Fleet API client
+internal/store/   SQLite encrypted token store
+internal/crypto/  AES-GCM helpers
+scripts/          key gen, validation, partner registration
+bruno/            API collection for manual testing
 ```
 
-By default the script registers `fleet.yashjani.com`. Override with `--domain`:
+## Security
 
-```bash
-python3 scripts/register_partner.py --domain your-domain.com
-```
-
-## OAuth bootstrap (one-time per token grant)
-
-1. Open:
-
-- `http://localhost:5000/oauth/start`
-
-2. Sign in and authorize Tesla consent screen.
-
-3. On success you should see:
-
-- `OAuth successful. You can now call /v1/is-charging.`
-
-This stores encrypted Tesla tokens in `./data/tesla.sqlite`.
-
-## Test endpoint manually
-
-```bash
-  curl -sS \
-  -H "Authorization: Bearer <SHORTCUT_BEARER_TOKEN>" \
-  http://localhost:5000/v1/is-charging
-```
-
-Expected output is exactly one of:
-
-- `true`
-- `false`
-
-## iPhone Shortcuts setup
-
-1. Create a personal automation scheduled daily (for example 11:00 PM).
-2. Add action: `Get Contents of URL`
-- Method: `GET`
-- URL: your hosted endpoint, e.g. `https://your-domain/v1/is-charging`
-- Headers:
-  - `Authorization` = `Bearer <SHORTCUT_BEARER_TOKEN>`
-3. Read response body text and branch on `true` or `false`.
-
-## Docker usage
-
-1. Create key + env locally first:
-
-```bash
-python3 scripts/gen_token_key.py
-cp .env.example .env
-# edit .env
-```
-
-2. Run:
-
-```bash
-docker compose up --build
-```
-
-3. Service runs on:
-
-- `http://localhost:5000`
-
-Volumes keep state:
-
-- `./data` -> `/app/data`
-- `./secrets` -> `/app/secrets`
-
-## Security notes
-
-- Keep `./secrets/token_enc_key.b64` private and never commit it.
-- Keep `./secrets/fleet_ec_private.pem` private and never commit it. The public key (`fleet_ec_public.pem`) is served publicly by design.
-- Keep `.env` private; it includes secrets.
-- `SHORTCUT_BEARER_TOKEN` should be long and random.
-- This is intended for personal/single-user usage.
+- Never commit `./secrets/` or `.env` (gitignored by default)
+- The EC public key is served publicly — that's by design
+- Single-user, personal use only
 
 ## Troubleshooting
 
-1. `load encryption key ... no such file or directory`
-- Run `python3 scripts/gen_token_key.py`.
 
-2. `missing required env vars`
-- Verify `.env` values and shell env loading.
+| Problem                                | Fix                                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------- |
+| `load encryption key ... no such file` | `make key-scripts`                                                          |
+| `missing required env vars`            | Check `.env`                                                                |
+| OAuth callback fails                   | `APP_BASE_URL/oauth/callback` must match Tesla app config exactly           |
+| Always returns `false`                 | Check OAuth completed, VIN is correct, `TESLA_BASE_URL` matches your region |
 
-3. OAuth callback errors
-- Confirm `<APP_BASE_URL>/oauth/callback` exactly matches Tesla app config.
-- Confirm your server is reachable at that URI.
 
-4. Endpoint always returns `false`
-- Ensure OAuth completed successfully.
-- Verify VIN and `TESLA_BASE_URL` are correct for your region.
-- Check server logs for Tesla API errors.
-
-## Repo layout
-
-- `cmd/server/main.go` entrypoint
-- `httpapi` HTTP handlers/routes
-- `internal/tesla` Tesla API client
-- `internal/store` SQLite encrypted token store
-- `internal/crypto` AES-GCM helpers
-- `scripts/` key generation/validation/registration tools
-
-## Current limitations
-
-- Single Tesla account + single VIN
-- No multi-user support
-- No webhook/telemetry cache mode
-- On upstream errors/unavailable vehicle status, API returns `false` by design
