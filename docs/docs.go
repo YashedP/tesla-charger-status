@@ -96,9 +96,9 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Returns \"true\" or \"false\" indicating whether the configured Tesla vehicle is currently charging. Errors map to \"false\".",
+                "description": "Returns whether the configured Tesla vehicle is currently charging. Errors map to false.",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "charging"
@@ -106,17 +106,35 @@ const docTemplate = `{
                 "summary": "Check if vehicle is charging",
                 "responses": {
                     "200": {
-                        "description": "true or false",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/httpapi.ChargingResponse"
                         }
                     },
                     "401": {
-                        "description": "unauthorized",
+                        "description": "Unauthorized",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/httpapi.ErrorResponse"
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "httpapi.ChargingResponse": {
+            "type": "object",
+            "properties": {
+                "is_charging": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "httpapi.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
                 }
             }
         }

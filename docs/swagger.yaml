@@ -1,4 +1,15 @@
 basePath: /
+definitions:
+  httpapi.ChargingResponse:
+    properties:
+      is_charging:
+        type: boolean
+    type: object
+  httpapi.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
 host: localhost:5000
 info:
   contact: {}
@@ -59,19 +70,19 @@ paths:
       - oauth
   /v1/is-charging:
     get:
-      description: Returns "true" or "false" indicating whether the configured Tesla
-        vehicle is currently charging. Errors map to "false".
+      description: Returns whether the configured Tesla vehicle is currently charging.
+        Errors map to false.
       produces:
-      - text/plain
+      - application/json
       responses:
         "200":
-          description: true or false
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/httpapi.ChargingResponse'
         "401":
-          description: unauthorized
+          description: Unauthorized
           schema:
-            type: string
+            $ref: '#/definitions/httpapi.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Check if vehicle is charging

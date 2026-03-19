@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,6 +36,16 @@ type TokenStore interface {
 
 type TeslaClient interface {
 	GetChargingState(ctx context.Context, httpClient *http.Client, vin string) (string, error)
+}
+
+// ChargingResponse represents the /v1/is-charging response.
+type ChargingResponse struct {
+	IsCharging bool `json:"is_charging"`
+}
+
+// ErrorResponse represents an API error.
+type ErrorResponse struct {
+	Error string `json:"error"`
 }
 
 type Server struct {
@@ -159,16 +170,16 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Check if vehicle is charging
-// @Description Returns "true" or "false" indicating whether the configured Tesla vehicle is currently charging. Errors map to "false".
+// @Description Returns whether the configured Tesla vehicle is currently charging. Errors map to false.
 // @Tags charging
-// @Produce plain
+// @Produce json
 // @Security BearerAuth
-// @Success 200 {string} string "true or false"
-// @Failure 401 {string} string "unauthorized"
+// @Success 200 {object} ChargingResponse
+// @Failure 401 {object} ErrorResponse
 // @Router /v1/is-charging [get]
 func (s *Server) handleIsCharging(w http.ResponseWriter, r *http.Request) {
 	if !validBearer(r.Header.Get("Authorization"), s.cfg.ShortcutBearerToken) {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		s.writeJSON(w, http.StatusUnauthorized, ErrorResponse{Error: "unauthorized"})
 		return
 	}
 
@@ -180,7 +191,7 @@ func (s *Server) handleIsCharging(w http.ResponseWriter, r *http.Request) {
 		if !errors.Is(err, store.ErrTokenNotFound) {
 			s.logger.Printf("is-charging: load token: %v", err)
 		}
-		s.writeBool(w, false)
+		s.writeJSON(w, http.StatusOK, ChargingResponse{IsCharging: false})
 		return
 	}
 
@@ -188,7 +199,7 @@ func (s *Server) handleIsCharging(w http.ResponseWriter, r *http.Request) {
 	fresh, err := src.Token()
 	if err != nil {
 		s.logger.Printf("is-charging: refresh token: %v", err)
-		s.writeBool(w, false)
+		s.writeJSON(w, http.StatusOK, ChargingResponse{IsCharging: false})
 		return
 	}
 
@@ -205,20 +216,19 @@ func (s *Server) handleIsCharging(w http.ResponseWriter, r *http.Request) {
 	state, err := s.tesla.GetChargingState(ctx, httpClient, s.cfg.TeslaVIN)
 	if err != nil {
 		s.logger.Printf("is-charging: tesla status: %v", err)
-		s.writeBool(w, false)
+		s.writeJSON(w, http.StatusOK, ChargingResponse{IsCharging: false})
 		return
 	}
 
-	s.writeBool(w, strings.EqualFold(state, "Charging"))
+	s.writeJSON(w, http.StatusOK, ChargingResponse{IsCharging: strings.EqualFold(state, "Charging")})
 }
 
-func (s *Server) writeBool(w http.ResponseWriter, value bool) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	if value {
-		_, _ = io.WriteString(w, "true")
-		return
+func (s *Server) writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		s.logger.Printf("writeJSON: %v", err)
 	}
-	_, _ = io.WriteString(w, "false")
 }
 
 func validBearer(header string, expectedToken string) bool {
