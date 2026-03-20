@@ -45,6 +45,9 @@ secrets/*
 # Agent artifacts
 .agent/
 
+# macOS
+.DS_Store
+
 # Editor/IDE
 # .idea/
 # .vscode/
