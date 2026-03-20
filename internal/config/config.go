@@ -45,6 +45,10 @@ func LoadFromEnv() (Config, error) {
 		cfg.Port = defaultPort
 	}
 
+	if cfg.AppBaseURL != "" && !strings.HasPrefix(cfg.AppBaseURL, "http://") && !strings.HasPrefix(cfg.AppBaseURL, "https://") {
+		cfg.AppBaseURL = "https://" + cfg.AppBaseURL
+	}
+
 	scopeValue := strings.TrimSpace(os.Getenv("TESLA_SCOPES"))
 	if scopeValue == "" {
 		scopeValue = defaultScopes
