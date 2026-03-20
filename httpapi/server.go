@@ -242,7 +242,8 @@ func (s *Server) handleIsCharging(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.writeJSON(w, http.StatusOK, ChargingResponse{IsCharging: strings.EqualFold(state, "Charging")})
+	isCharging := strings.EqualFold(state, "Charging") || strings.EqualFold(state, "Complete")
+	s.writeJSON(w, http.StatusOK, ChargingResponse{IsCharging: isCharging})
 }
 
 func (s *Server) writeJSON(w http.ResponseWriter, status int, v any) {
