@@ -1,4 +1,4 @@
-#define name "Tesla Charging Check"
+#define name Tesla Charging Check
 #define color red
 #define glyph lightningBolt
 
@@ -22,5 +22,5 @@ if charging == "No" {
   const alarmTime = adjustDate(now, "Add", qty(1, "min"))
   const formatted = formatDate(alarmTime, "Custom", "HH:mm")
 
-  createAlarm("Tesla Not Charging", formatted)
+  createAlarm("Alarm", formatted)
 }
