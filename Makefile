@@ -53,7 +53,9 @@ endif
 
 shortcut: ## Compile Apple Shortcut from Cherri source
 	@test -f .env || { echo "Error: .env file not found. Copy .env.example and fill in values."; exit 1; }
-	@. ./.env && sed \
+	@. ./.env && \
+		case "$$APP_BASE_URL" in http://*|https://*) ;; *) APP_BASE_URL="https://$$APP_BASE_URL" ;; esac && \
+		sed \
 		-e "s|__APP_BASE_URL__|$$APP_BASE_URL|g" \
 		-e "s|__SHORTCUT_BEARER_TOKEN__|$$SHORTCUT_BEARER_TOKEN|g" \
 		shortcuts/charging-alarm.cherri > shortcuts/.charging-alarm.generated.cherri

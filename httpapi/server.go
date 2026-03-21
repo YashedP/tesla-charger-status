@@ -33,17 +33,6 @@ const (
 	wakePollInterval     = 2 * time.Second
 )
 
-type TokenStore interface {
-	LoadToken(ctx context.Context) (*oauth2.Token, error)
-	SaveToken(ctx context.Context, token *oauth2.Token) error
-}
-
-type TeslaClient interface {
-	GetChargingState(ctx context.Context, httpClient *http.Client, vin string) (string, error)
-	WakeUp(ctx context.Context, httpClient *http.Client, vin string) error
-	GetVehicleState(ctx context.Context, httpClient *http.Client, vin string) (string, error)
-}
-
 // ChargingResponse represents the /v1/is-charging response.
 type ChargingResponse struct {
 	IsCharging bool `json:"is_charging"`
@@ -57,12 +46,12 @@ type ErrorResponse struct {
 type Server struct {
 	cfg      config.Config
 	oauthCfg *oauth2.Config
-	tokens   TokenStore
-	tesla    TeslaClient
+	tokens   store.TokenStore
+	tesla    tesla.Client
 	logger   *log.Logger
 }
 
-func NewRouter(cfg config.Config, oauthCfg *oauth2.Config, tokens TokenStore, tesla TeslaClient, logger *log.Logger) http.Handler {
+func NewRouter(cfg config.Config, oauthCfg *oauth2.Config, tokens store.TokenStore, tesla tesla.Client, logger *log.Logger) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		oauthCfg: oauthCfg,

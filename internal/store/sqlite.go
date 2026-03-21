@@ -30,6 +30,11 @@ type StringCipher interface {
 	DecryptString(encoded string) (string, error)
 }
 
+type TokenStore interface {
+	LoadToken(ctx context.Context) (*oauth2.Token, error)
+	SaveToken(ctx context.Context, token *oauth2.Token) error
+}
+
 type SQLiteTokenStore struct {
 	db     *sql.DB
 	cipher StringCipher

@@ -33,13 +33,6 @@ func NewFleetClient(baseURL string) *FleetClient {
 }
 
 func (c *FleetClient) GetChargingState(ctx context.Context, httpClient *http.Client, vin string) (string, error) {
-	if vin == "" {
-		return "", fmt.Errorf("vin is required")
-	}
-	if httpClient == nil {
-		return "", fmt.Errorf("http client is required")
-	}
-
 	endpoint := fmt.Sprintf("/api/1/vehicles/%s/vehicle_data", url.PathEscape(vin))
 	payload := &vehicleDataPayload{}
 
@@ -98,13 +91,6 @@ func (c *FleetClient) newRequestClient(httpClient *http.Client) *resty.Client {
 }
 
 func (c *FleetClient) WakeUp(ctx context.Context, httpClient *http.Client, vin string) error {
-	if vin == "" {
-		return fmt.Errorf("vin is required")
-	}
-	if httpClient == nil {
-		return fmt.Errorf("http client is required")
-	}
-
 	endpoint := fmt.Sprintf("/api/1/vehicles/%s/wake_up", url.PathEscape(vin))
 
 	resp, err := c.newRequestClient(httpClient).
@@ -127,13 +113,6 @@ func (c *FleetClient) WakeUp(ctx context.Context, httpClient *http.Client, vin s
 }
 
 func (c *FleetClient) GetVehicleState(ctx context.Context, httpClient *http.Client, vin string) (string, error) {
-	if vin == "" {
-		return "", fmt.Errorf("vin is required")
-	}
-	if httpClient == nil {
-		return "", fmt.Errorf("http client is required")
-	}
-
 	endpoint := fmt.Sprintf("/api/1/vehicles/%s", url.PathEscape(vin))
 	payload := &vehiclePayload{}
 
